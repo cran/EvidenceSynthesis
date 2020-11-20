@@ -1,8 +1,8 @@
 Package: EvidenceSynthesis
 Type: Package
 Title: Synthesizing Causal Evidence in a Distributed Research Network
-Version: 0.2.0
-Date: 2020-11-13
+Version: 0.2.1
+Date: 2020-11-20
 Authors@R: c(
   person("Martijn", "Schuemie", email = "schuemie@ohdsi.org", role = c("aut", "cre")),
   person("Marc A.", "Suchard", , "msuchard@ucla.edu", role = c("aut")),
@@ -13,7 +13,7 @@ Description: Routines for combining causal effect estimates and study diagnostic
   Allows for normal and non-normal approximations of the data-site likelihood of the effect parameter. 
 Depends: survival, R (>= 3.5.0)
 Imports: ggplot2, gridExtra, meta, EmpiricalCalibration, rJava,
-        BeastJar, Cyclops (>= 3.1.0), HDInterval, rlang, methods
+        BeastJar, Cyclops (>= 3.1.0), HDInterval, coda, rlang, methods
 Suggests: knitr, rmarkdown, testthat, sn
 License: Apache License 2.0
 URL: https://ohdsi.github.io/EvidenceSynthesis/,
@@ -23,9 +23,9 @@ VignetteBuilder: knitr
 RoxygenNote: 7.1.1
 Encoding: UTF-8
 NeedsCompilation: no
-Packaged: 2020-11-16 16:03:46 UTC; MSCHUEMI
+Packaged: 2020-11-20 07:56:40 UTC; MSCHUEMI
 Author: Martijn Schuemie [aut, cre],
   Marc A. Suchard [aut],
   Observational Health Data Science and Informatics [cph]
 Repository: CRAN
-Date/Publication: 2020-11-19 11:00:02 UTC
+Date/Publication: 2020-11-20 10:30:22 UTC
