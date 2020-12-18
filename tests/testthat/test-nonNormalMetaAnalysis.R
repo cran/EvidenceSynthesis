@@ -39,6 +39,9 @@ if (recomputeGoldStandard) {
   pooledRandomFxEstimate <- readRDS("resources/pooledRandomFxEstimate.rds")
 }
 
+# seed <- round(runif(1, 0, 1e10))
+seed <- 1
+
 # Custom approximation
 data <- createApproximations(populations, "custom")
 
@@ -53,10 +56,15 @@ test_that("Custom approximation: pooled matches fixed-effects meta-analysis", {
 
 test_that("Custom approximation: pooled matches random-effects meta-analysis", {
   skip_if_not(supportsJava8())
-  estimate <- computeBayesianMetaAnalysis(data)
-  expect_equal(estimate,
-               pooledRandomFxEstimate,
-               tolerance = 0.15,
+  estimate <- computeBayesianMetaAnalysis(data, seed = seed)
+  expect_equal(estimate[, c("mu", "tau", "logRr")],
+               pooledRandomFxEstimate[, c("mu", "tau", "logRr")],
+               tolerance = 0.10,
+               scale = 1,
+               check.attributes = FALSE)
+  expect_equal(estimate[, c("mu95Lb", "mu95Ub", "muSe", "tau95Lb", "tau95Ub", "seLogRr")],
+               pooledRandomFxEstimate[, c("mu95Lb", "mu95Ub", "muSe", "tau95Lb", "tau95Ub", "seLogRr")],
+               tolerance = 0.30,
                scale = 1,
                check.attributes = FALSE)
 })
@@ -75,10 +83,15 @@ test_that("Grid approximation: pooled matches meta-analysis", {
 
 test_that("Grid approximation: pooled matches random-effects meta-analysis", {
   skip_if_not(supportsJava8())
-  estimate <- computeBayesianMetaAnalysis(data)
-  expect_equal(estimate,
-               pooledRandomFxEstimate,
-               tolerance = 0.15,
+  estimate <- computeBayesianMetaAnalysis(data, seed = seed)
+  expect_equal(estimate[, c("mu", "tau", "logRr")],
+               pooledRandomFxEstimate[, c("mu", "tau", "logRr")],
+               tolerance = 0.10,
+               scale = 1,
+               check.attributes = FALSE)
+  expect_equal(estimate[, c("mu95Lb", "mu95Ub", "muSe", "tau95Lb", "tau95Ub", "seLogRr")],
+               pooledRandomFxEstimate[, c("mu95Lb", "mu95Ub", "muSe", "tau95Lb", "tau95Ub", "seLogRr")],
+               tolerance = 0.30,
                scale = 1,
                check.attributes = FALSE)
 })
@@ -94,7 +107,7 @@ test_that("Normal approximation: pooled matches meta-analysis", {
 
 test_that("Normal approximation: pooled matches random-effects meta-analysis", {
   skip_if_not(supportsJava8())
-  estimate <- computeBayesianMetaAnalysis(data)
+  estimate <- computeBayesianMetaAnalysis(data, seed = seed)
   # Not really expecting normal approximation is close to gold standard:
   expect_equal(estimate, pooledRandomFxEstimate, tolerance = 1, check.attributes = FALSE)
 })
@@ -104,13 +117,24 @@ data <- createApproximations(populations, "skew normal")
 
 test_that("Skew-normal approximation: pooled matches meta-analysis", {
   estimate <- computeFixedEffectMetaAnalysis(data)
-  # Not really expecting normal approximation is close to gold standard:
-  expect_equal(estimate, pooledFixedFxEstimate, tolerance = 10, check.attributes = FALSE)
+  expect_equal(estimate,
+               pooledFixedFxEstimate,
+               tolerance = 0.30,
+               scale = 1,
+               check.attributes = FALSE)
 })
 
 test_that("Skew-normal approximation: pooled matches random-effects meta-analysis", {
   skip_if_not(supportsJava8())
-  estimate <- computeBayesianMetaAnalysis(data)
-  # Not really expecting normal approximation is close to gold standard:
-  expect_equal(estimate, pooledRandomFxEstimate, tolerance = 10, check.attributes = FALSE)
+  estimate <- computeBayesianMetaAnalysis(data, seed = seed)
+  expect_equal(estimate[, c("mu", "tau", "logRr")],
+               pooledRandomFxEstimate[, c("mu", "tau", "logRr")],
+               tolerance = 0.10,
+               scale = 1,
+               check.attributes = FALSE)
+  expect_equal(estimate[, c("mu95Lb", "mu95Ub", "muSe", "tau95Lb", "tau95Ub", "seLogRr")],
+               pooledRandomFxEstimate[, c("mu95Lb", "mu95Ub", "muSe", "tau95Lb", "tau95Ub", "seLogRr")],
+               tolerance = 0.30,
+               scale = 1,
+               check.attributes = FALSE)
 })
