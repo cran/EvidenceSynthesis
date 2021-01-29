@@ -1,8 +1,8 @@
 Package: EvidenceSynthesis
 Type: Package
 Title: Synthesizing Causal Evidence in a Distributed Research Network
-Version: 0.2.2
-Date: 2020-12-17
+Version: 0.2.3
+Date: 2021-01-29
 Authors@R: c(
   person("Martijn", "Schuemie", email = "schuemie@ohdsi.org", role = c("aut", "cre")),
   person("Marc A.", "Suchard", , "msuchard@ucla.edu", role = c("aut")),
@@ -24,9 +24,9 @@ VignetteBuilder: knitr
 RoxygenNote: 7.1.1
 Encoding: UTF-8
 NeedsCompilation: no
-Packaged: 2020-12-18 07:50:33 UTC; MSCHUEMI
+Packaged: 2021-01-29 09:17:44 UTC; MSCHUEMI
 Author: Martijn Schuemie [aut, cre],
   Marc A. Suchard [aut],
   Observational Health Data Science and Informatics [cph]
 Repository: CRAN
-Date/Publication: 2020-12-18 16:10:14 UTC
+Date/Publication: 2021-01-29 13:30:06 UTC
