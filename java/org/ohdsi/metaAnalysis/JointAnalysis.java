@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright 2021 Observational Health Data Sciences and Informatics
+ * Copyright 2022 Observational Health Data Sciences and Informatics
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,8 @@ import dr.math.distributions.NormalDistribution;
 import org.ohdsi.data.CoxData;
 import org.ohdsi.data.SortedCoxData;
 import org.ohdsi.likelihood.CoxPartialLikelihood;
+import org.ohdsi.mcmc.Analysis;
+import org.ohdsi.mcmc.Runner;
 
 import java.util.ArrayList;
 import java.util.Arrays;

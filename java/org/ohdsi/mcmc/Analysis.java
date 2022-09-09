@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright 2021 Observational Health Data Sciences and Informatics
+ * Copyright 2022 Observational Health Data Sciences and Informatics
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  ******************************************************************************/
-package org.ohdsi.metaAnalysis;
+package org.ohdsi.mcmc;
 
 import dr.inference.loggers.Loggable;
 import dr.inference.model.Likelihood;

@@ -1,3 +1,15 @@
+EvidenceSynthesis 0.3.0
+=======================
+
+Changes
+
+1. Supporting adaptive grid in `computeBayesianMetaAnalysis()` and `approximateLikelihood()` functions.
+
+Bugfixes
+
+1 Fixed error when approximating likelihood using grid (parameter to approximate could only be "x").
+
+
 EvidenceSynthesis 0.2.3
 =======================
 

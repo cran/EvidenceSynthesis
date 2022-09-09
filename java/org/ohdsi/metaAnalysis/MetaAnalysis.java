@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright 2021 Observational Health Data Sciences and Informatics
+ * Copyright 2022 Observational Health Data Sciences and Informatics
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,12 +21,16 @@ import java.util.List;
 
 import dr.inference.distribution.DistributionLikelihood;
 import dr.inference.distribution.NormalDistributionModel;
+import dr.inference.distribution.ParametricDistributionModel;
 import dr.inference.loggers.Loggable;
 import dr.inference.model.CompoundLikelihood;
 import dr.inference.model.Likelihood;
 import dr.inference.model.Parameter;
 import dr.inference.operators.*;
+import dr.math.distributions.Distribution;
 import dr.math.distributions.NormalDistribution;
+import org.ohdsi.mcmc.Analysis;
+import org.ohdsi.mcmc.Runner;
 
 public class MetaAnalysis implements Analysis {
 
@@ -51,7 +55,7 @@ public class MetaAnalysis implements Analysis {
 		boolean isPrecision = scalePrior.isPrecision();
 
 		DistributionLikelihood hierarchicalLikelihood = new DistributionLikelihood(
-				new NormalDistributionModel(mu, tau, isPrecision));
+				getMuDistribution(mu, tau, isPrecision));
 		hierarchicalLikelihood.addData(theta);
 
 		int defaultThreads = 0; // No thread pools
@@ -71,8 +75,7 @@ public class MetaAnalysis implements Analysis {
 		// Build transition kernel
 		schedule = new SimpleOperatorSchedule(1000, 0.0);
 		double defaultWeight = 1.0;
-		schedule.addOperator(
-				new NormalNormalMeanGibbsOperator(hierarchicalLikelihood, muPrior.getDistribution(), defaultWeight));
+		schedule.addOperator(getMuOperator(mu, hierarchicalLikelihood, muPrior.getDistribution(), defaultWeight));
 
 		AdaptationMode mode = AdaptationMode.ADAPTATION_ON;
 
@@ -82,6 +85,17 @@ public class MetaAnalysis implements Analysis {
 		for (Parameter p : dataModel.getIndividualParameters()) {
 			schedule.addOperator(new RandomWalkOperator(p, null, 0.75, condition, defaultWeight, mode));
 		}
+	}
+
+	protected MCMCOperator getMuOperator(Parameter mu,
+										 DistributionLikelihood likelihood,
+										 Distribution prior,
+										 double weight) {
+		return new NormalNormalMeanGibbsOperator(likelihood, prior, weight);
+	}
+
+	protected ParametricDistributionModel getMuDistribution(Parameter mu, Parameter tau, boolean isPrecision) {
+		return new NormalDistributionModel(mu, tau, isPrecision);
 	}
 
 	@Override
