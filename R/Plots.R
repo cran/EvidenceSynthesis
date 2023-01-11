@@ -1,4 +1,4 @@
-# Copyright 2022 Observational Health Data Sciences and Informatics
+# Copyright 2023 Observational Health Data Sciences and Informatics
 #
 # This file is part of EvidenceSynthesis
 #
@@ -55,41 +55,12 @@ plotLikelihoodFit <- function(approximation,
                               xLabel = "Hazard Ratio",
                               limits = c(0.1, 10),
                               fileName = NULL) {
-  if ("logRr" %in% colnames(approximation)) {
-    inform("Detected normal approximation")
-    x <- seq(log(limits[1]), log(limits[2]), length.out = 100)
-    y <- dnorm(x, mean = approximation$logRr, sd = approximation$seLogRr, log = TRUE)
-  } else if ("gamma" %in% colnames(approximation)) {
-    inform("Detected custom parameric approximation")
-    x <- seq(log(limits[1]), log(limits[2]), length.out = 100)
-    y <- customFunction(x,
-                        mu = approximation$mu,
-                        sigma = approximation$sigma,
-                        gamma = approximation$gamma)
-  } else if ("alpha" %in% colnames(approximation)) {
-    inform("Detected skew normal approximation")
-    x <- seq(log(limits[1]), log(limits[2]), length.out = 100)
-    y <- skewNormal(x,
-                    mu = approximation$mu,
-                    sigma = approximation$sigma,
-                    alpha = approximation$alpha)
-  } else {
-    inform("Detected grid approximation")
-    x <- as.numeric(names(approximation))
-    if (any(is.na(x))) {
-      abort("Expecting grid data, but not all column names are numeric")
-    }
-    y <- approximation
-    
-  }
-  ll <- getLikelihoodProfile(cyclopsFit, parameter, x)
-  x <- x[!is.nan(ll)]
-  y <- y[!is.nan(ll)]
-  ll <- ll[!is.nan(ll)]
-  ll <- ll - max(ll)
-  y <- y - max(y)
-  plotData <- rbind(data.frame(x = x, ll = ll, type = "Likelihood"),
-                    data.frame(x = x, ll = y, type = "Approximation"))
+  coords <- getLikelihoodCoordinates(approximation, limits)
+  coords$ll <- getLikelihoodProfile(cyclopsFit, parameter, coords$x)
+  coords <- coords[!is.nan(coords$ll), ]
+  coords$ll <- coords$ll - max(coords$ll)
+  plotData <- rbind(data.frame(x = coords$x, ll = coords$ll, type = "Likelihood"),
+                    data.frame(x = coords$x, ll = coords$y, type = "Approximation"))
   if (logScale) {
     yLabel <- "Log Likelihood"
   } else {
@@ -121,6 +92,36 @@ plotLikelihoodFit <- function(approximation,
   if (!is.null(fileName))
     ggplot2::ggsave(fileName, plot, width = 5, height = 5, dpi = 400)
   return(plot)
+}
+
+getLikelihoodCoordinates <- function(approximation, limits, verbose = TRUE) {
+  type <- detectApproximationType(approximation, verbose = verbose)
+  if (type == "normal") {
+    x <- seq(log(limits[1]), log(limits[2]), length.out = 100)
+    y <- dnorm(x, mean = approximation$logRr, sd = approximation$seLogRr, log = TRUE)
+  } else if (type == "custom") {
+    x <- seq(log(limits[1]), log(limits[2]), length.out = 100)
+    y <- customFunction(x,
+                        mu = approximation$mu,
+                        sigma = approximation$sigma,
+                        gamma = approximation$gamma)
+  } else if  (type == "skew normal") {
+    x <- seq(log(limits[1]), log(limits[2]), length.out = 100)
+    y <- skewNormal(x,
+                    mu = approximation$mu,
+                    sigma = approximation$sigma,
+                    alpha = approximation$alpha)
+  } else if (type == "adaptive grid") {
+    x <- approximation$point
+    y <- approximation$value
+  } else if (type == "grid") {
+    x <- as.numeric(names(approximation))
+    y <- approximation
+  } else {
+    abort(sprintf("Approximation type '%s' not supported by this function", type))
+  }
+  y <- y - max(y)
+  return(data.frame(x = x, y = y))
 }
 
 #' Plot MCMC trace
@@ -175,12 +176,12 @@ plotMcmcTrace <- function(estimate, showEstimate = TRUE, dataCutoff = 0.01, file
   }
   data <- rbind(dataMu, dataTau)
   plot <- ggplot2::ggplot(data, ggplot2::aes(x = .data$x,
-                                             y = .data$trace)) + 
-    ggplot2::geom_line(alpha = 0.7) + 
+                                             y = .data$trace)) +
+    ggplot2::geom_line(alpha = 0.7) +
     ggplot2::scale_x_continuous("Iterations") +
-    ggplot2::facet_grid(var ~ ., scales = "free", switch = "both") + 
-    ggplot2::theme(axis.title.y = ggplot2::element_blank(), 
-                   strip.placement = "outside", 
+    ggplot2::facet_grid(var ~ ., scales = "free", switch = "both") +
+    ggplot2::theme(axis.title.y = ggplot2::element_blank(),
+                   strip.placement = "outside",
                    strip.background = ggplot2::element_blank())
   if (showEstimate) {
     mode <- data.frame(trace = c(estimate$mu, estimate$tau), var = c("Mu", "Tau"))
@@ -188,7 +189,7 @@ plotMcmcTrace <- function(estimate, showEstimate = TRUE, dataCutoff = 0.01, file
                                estimate$mu95Ub,
                                estimate$tau95Lb,
                                estimate$tau95Ub), var = c("Mu", "Mu", "Tau", "Tau"))
-    
+
     plot <- plot +
       ggplot2::geom_hline(ggplot2::aes(yintercept = trace), data = mode) +
       ggplot2::geom_hline(ggplot2::aes(yintercept = trace), data = ci, linetype = "dashed")
@@ -250,11 +251,11 @@ plotPerDbMcmcTrace <- function(estimate, showEstimate = TRUE, dataCutoff = 0.01,
   }
   data <- lapply(3:ncol(traces), getDbChain)
   data <- do.call(rbind, data)
-  
-  plot <- ggplot2::ggplot(data, ggplot2::aes(x = .data$x, y = .data$trace)) + 
-    ggplot2::geom_line(alpha = 0.7) + 
-    ggplot2::scale_x_continuous("Iterations") + 
-    ggplot2::scale_y_continuous(expression(theta)) + 
+
+  plot <- ggplot2::ggplot(data, ggplot2::aes(x = .data$x, y = .data$trace)) +
+    ggplot2::geom_line(alpha = 0.7) +
+    ggplot2::scale_x_continuous("Iterations") +
+    ggplot2::scale_y_continuous(expression(theta)) +
     ggplot2::facet_grid(var ~ ., scales = "free")
   if (showEstimate) {
     getDbMedian <- function(i) {
@@ -262,13 +263,13 @@ plotPerDbMcmcTrace <- function(estimate, showEstimate = TRUE, dataCutoff = 0.01,
     }
     mode <- lapply(3:ncol(traces), getDbMedian)
     mode <- do.call(rbind, mode)
-    
+
     getDbCi <- function(i) {
       return(data.frame(trace = HDInterval::hdi(traces[, i]), var = sprintf("Site %s", i - 2)))
     }
     ci <- lapply(3:ncol(traces), getDbCi)
     ci <- do.call(rbind, ci)
-    
+
     plot <- plot +
       ggplot2::geom_hline(ggplot2::aes(yintercept = .data$trace), data = mode) +
       ggplot2::geom_hline(ggplot2::aes(yintercept = .data$trace),
@@ -330,12 +331,12 @@ plotPosterior <- function(estimate, showEstimate = TRUE, dataCutoff = 0.01, file
     dataTau <- dataTau[dataTau$trace > limsTau[1] & dataTau$trace < limsTau[2], ]
   }
   data <- rbind(dataMu, dataTau)
-  plot <- ggplot2::ggplot(data, ggplot2::aes(x = .data$trace)) + 
-    ggplot2::geom_density(alpha = 0.4, fill = rgb(0, 0, 0), color = rgb(0, 0, 0)) + 
-    ggplot2::scale_y_continuous("Density") + 
+  plot <- ggplot2::ggplot(data, ggplot2::aes(x = .data$trace)) +
+    ggplot2::geom_density(alpha = 0.4, fill = rgb(0, 0, 0), color = rgb(0, 0, 0)) +
+    ggplot2::scale_y_continuous("Density") +
     ggplot2::facet_grid(~var, scales = "free", switch = "both") +
-    ggplot2::theme(axis.title.x = ggplot2::element_blank(), 
-                   strip.placement = "outside", 
+    ggplot2::theme(axis.title.x = ggplot2::element_blank(),
+                   strip.placement = "outside",
                    strip.background = ggplot2::element_blank())
   if (showEstimate) {
     mode <- data.frame(trace = c(estimate$mu, estimate$tau), var = c("Mu", "Tau"))
@@ -343,7 +344,7 @@ plotPosterior <- function(estimate, showEstimate = TRUE, dataCutoff = 0.01, file
                                estimate$mu95Ub,
                                estimate$tau95Lb,
                                estimate$tau95Ub), var = c("Mu", "Mu", "Tau", "Tau"))
-    
+
     plot <- plot +
       ggplot2::geom_vline(ggplot2::aes(xintercept = .data$trace), data = mode) +
       ggplot2::geom_vline(ggplot2::aes(xintercept = .data$trace),
@@ -404,11 +405,11 @@ plotPerDbPosterior <- function(estimate, showEstimate = TRUE, dataCutoff = 0.01,
   }
   data <- lapply(3:ncol(traces), getDbChain)
   data <- do.call(rbind, data)
-  
-  plot <- ggplot2::ggplot(data, ggplot2::aes(x = .data$trace)) + 
-    ggplot2::geom_density(alpha = 0.4, fill = rgb(0, 0, 0), color = rgb(0, 0, 0)) + 
-    ggplot2::scale_x_continuous(expression(theta)) + 
-    ggplot2::scale_y_continuous("Density") + 
+
+  plot <- ggplot2::ggplot(data, ggplot2::aes(x = .data$trace)) +
+    ggplot2::geom_density(alpha = 0.4, fill = rgb(0, 0, 0), color = rgb(0, 0, 0)) +
+    ggplot2::scale_x_continuous(expression(theta)) +
+    ggplot2::scale_y_continuous("Density") +
     ggplot2::facet_grid(var ~ ., scales = "free")
   if (showEstimate) {
     getDbMedian <- function(i) {
@@ -416,13 +417,13 @@ plotPerDbPosterior <- function(estimate, showEstimate = TRUE, dataCutoff = 0.01,
     }
     mode <- lapply(3:ncol(traces), getDbMedian)
     mode <- do.call(rbind, mode)
-    
+
     getDbCi <- function(i) {
       return(data.frame(trace = HDInterval::hdi(traces[, i]), var = sprintf("Site %s", i - 2)))
     }
     ci <- lapply(3:ncol(traces), getDbCi)
     ci <- do.call(rbind, ci)
-    
+
     plot <- plot +
       ggplot2::geom_vline(ggplot2::aes(xintercept = trace), data = mode) +
       ggplot2::geom_vline(ggplot2::aes(xintercept = trace), data = ci, linetype = "dashed")

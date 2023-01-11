@@ -1,3 +1,13 @@
+EvidenceSynthesis 0.4.0
+=======================
+
+Changes
+
+1. Supporting adaptive grid in `plotLikelihoodFit()` and `computeFixedEffectMetaAnalysis()` functions.
+
+2. Adding visualization of likelihood curves to `plotMetaAnalysisForest()`.
+
+
 EvidenceSynthesis 0.3.0
 =======================
 

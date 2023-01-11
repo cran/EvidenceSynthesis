@@ -29,8 +29,12 @@ exp(coef(cyclopsFit))
 exp(confint(cyclopsFit, parm = "x")[2:3])
 
 ## ----eval=TRUE----------------------------------------------------------------
-approximation <-  approximateLikelihood(cyclopsFit, parameter = "x", approximation = "custom")
-approximation
+approximation <-  approximateLikelihood(
+  cyclopsFit = cyclopsFit, 
+  parameter = "x", 
+  approximation = "adaptive grid"
+)
+head(approximation)
 
 ## ----eval=TRUE----------------------------------------------------------------
 plotLikelihoodFit(approximation = approximation,
@@ -45,26 +49,17 @@ fitModelInDatabase <- function(population) {
   cyclopsFit <- fitCyclopsModel(cyclopsData)
   approximation <-  approximateLikelihood(cyclopsFit, 
                                           parameter = "x",
-                                          approximation = "custom")
+                                          approximation = "adaptive grid")
   return(approximation)
 }
 approximations <- lapply(populations, fitModelInDatabase)
-approximations
 
 ## ----eval=TRUE, message=FALSE-------------------------------------------------
-# Combine the various approximations into a single data frame, one row per database:
-approximationsTable <- do.call(rbind, approximations)
-
-# Do meta-analysis
-estimate <- computeFixedEffectMetaAnalysis(approximationsTable)
+estimate <- computeFixedEffectMetaAnalysis(approximations)
 estimate
 
 ## ----eval=TRUE, message=FALSE-------------------------------------------------
-# Combine the various approximations into a single data frame, one row per database:
-approximationsTable <- do.call(rbind, approximations)
-
-# Do meta-analysis
-estimate <- computeBayesianMetaAnalysis(approximationsTable)
+estimate <- computeBayesianMetaAnalysis(approximations)
 exp(estimate[1:3])
 
 ## ----eval=TRUE, message=FALSE-------------------------------------------------
@@ -74,12 +69,17 @@ plotPosterior(estimate)
 plotMcmcTrace(estimate)
 
 ## ----eval=TRUE, message=FALSE-------------------------------------------------
-estimate2 <- computeBayesianMetaAnalysis(approximationsTable, priorSd = c(2, 0.1))
+estimate2 <- computeBayesianMetaAnalysis(approximations, priorSd = c(2, 0.1))
 exp(estimate2[1:3])
 
 ## ----eval=TRUE, message=FALSE-------------------------------------------------
 # Make up some data site labels:
 labels <- paste("Data site", LETTERS[1:length(populations)])
 
-plotMetaAnalysisForest(approximationsTable, labels, estimate)
+plotMetaAnalysisForest(
+  data = approximations, 
+  labels = labels, 
+  estimate = estimate,
+  xLabel = "Hazard Ratio",
+  showLikelihood = TRUE)
 

@@ -1,4 +1,4 @@
-# Copyright 2022 Observational Health Data Sciences and Informatics
+# Copyright 2023 Observational Health Data Sciences and Informatics
 #
 # This file is part of EvidenceSynthesis
 #
@@ -54,10 +54,9 @@
 #'
 #' @export
 computeFixedEffectMetaAnalysis <- function(data, alpha = 0.05) {
-  # Determine type based on data structure:
-  if ("logRr" %in% colnames(data)) {
-    inform("Detected data following normal distribution")
-    data <- cleanData(data, c("logRr", "seLogRr"), minValues = c(-100, 1e-05))
+  type <- detectApproximationType(data)
+  data <- cleanApproximations(data)
+  if (type == "normal") {
     m <- meta::metagen(TE = data$logRr,
                        seTE = data$seLogRr,
                        studlab = rep("", nrow(data)),
@@ -71,52 +70,36 @@ computeFixedEffectMetaAnalysis <- function(data, alpha = 0.05) {
                            logRr = ffx$TE,
                            seLogRr = ffx$seTE)
     return(estimate)
-  } else if ("gamma" %in% colnames(data)) {
-    inform("Detected data following custom parameric distribution")
-    data <- cleanData(data, c("mu", "sigma", "gamma"), minValues = c(-100, 1e-05, -100))
+  } else if (type == "custom") {
     estimate <- computeEstimateFromApproximation(approximationFuntion = combineLogLikelihoodFunctions,
                                                  a = alpha,
                                                  fits = data,
                                                  fun = customFunction)
     return(estimate)
-  } else if ("alpha" %in% colnames(data)) {
-    inform("Detected data following skew normal distribution")
-    data <- cleanData(data,
-                      c("mu", "sigma", "alpha"),
-                      minValues = c(-100, 1e-05, -10000),
-                      maxValues = c(100, 10000, 10000))
+  } else if  (type == "skew normal") {
     estimate <- computeEstimateFromApproximation(approximationFuntion = combineLogLikelihoodFunctions,
                                                  a = alpha,
                                                  fits = data,
                                                  fun = skewNormal)
     return(estimate)
-  } else if (is.list(data) && !is.data.frame(data)) {
-    if ("stratumId" %in% names(data[[1]])) {
-      inform("Detected (pooled) patient-level data")
-      population <- poolPopulations(data)
-      cyclopsData <- Cyclops::createCyclopsData(Surv(time, y) ~ x + strata(stratumId),
-                                                data = population,
-                                                modelType = "cox")
-      cyclopsFit <- Cyclops::fitCyclopsModel(cyclopsData)
-      mode <- coef(cyclopsFit)
-      ci95 <- confint(cyclopsFit, 1, level = 0.95)
-      estimate <- data.frame(rr = exp(mode),
-                             lb = exp(ci95[2]),
-                             ub = exp(ci95[3]),
-                             logRr = mode,
-                             seLogRr = (ci95[3] - ci95[2])/(2 * qnorm(0.975)))
-      return(estimate)
-    } else if ("point" %in% names(data[[1]])) {
-      abort("Adaptive grid data not supported in this function")
-    } else {
-      abort("Unknown input data format")
-    }
-  } else {
-    inform("Detected data following grid distribution")
-    x <- as.numeric(colnames(data))
-    if (any(is.na(x))) {
-      abort("Expecting grid data, but not all column names are numeric")
-    }
+  } else if (type == "pooled") {
+    population <- poolPopulations(data)
+    cyclopsData <- Cyclops::createCyclopsData(Surv(time, y) ~ x + strata(stratumId),
+                                              data = population,
+                                              modelType = "cox")
+    cyclopsFit <- Cyclops::fitCyclopsModel(cyclopsData)
+    mode <- coef(cyclopsFit)
+    ci95 <- confint(cyclopsFit, 1, level = 0.95)
+    estimate <- data.frame(rr = exp(mode),
+                           lb = exp(ci95[2]),
+                           ub = exp(ci95[3]),
+                           logRr = mode,
+                           seLogRr = (ci95[3] - ci95[2])/(2 * qnorm(0.975)))
+    return(estimate)
+  } else if (type == "adaptive grid") {
+    estimate <- computeFixedEffectAdaptiveGrid(data, alpha)
+    return(estimate)
+  } else if (type == "grid") {
     data <- cleanData(data,
                       colnames(data),
                       minValues = rep(-1e6, ncol(data)),
@@ -125,7 +108,50 @@ computeFixedEffectMetaAnalysis <- function(data, alpha = 0.05) {
     grid <- apply(data, 2, sum)
     estimate <- computeEstimateFromGrid(grid, alpha = alpha)
     return(estimate)
+  } else {
+    abort(sprintf("Approximation type '%s' not supported by this function", type))
   }
+}
+
+estimate <- computeFixedEffectAdaptiveGrid <- function(data, alpha) {
+  gridPoints <- sort(unique(do.call(c, lapply(data, function(x) x$point))))
+  values <- rep(0, length(gridPoints))
+  for (i in seq_along(data)) {
+    cleanedData <- as.data.frame(data[[i]])
+    cleanedData$value <- cleanedData$value - max(cleanedData$value)
+    cleanedData <- cleanData(cleanedData,
+                             c("point", "value"),
+                             minValues = c(-100, -1e6),
+                             maxValues = c(100, 0))
+    cleanedData <- cleanedData[order(cleanedData$point), ]
+
+    # Compute likelihood at unioned grid points, using linear interpolation where needed:
+    cursor <- 1
+    for (j in seq_along(gridPoints)) {
+      if (cursor == 1 && gridPoints[j] <= cleanedData$point[cursor]) {
+        value <- cleanedData$value[cursor]
+      } else if (cursor == nrow(cleanedData) && gridPoints[j] >= cleanedData$point[cursor]) {
+        value <- cleanedData$value[cursor]
+      } else {
+        if (gridPoints[j] > cleanedData$point[cursor]) {
+          cursor <- cursor + 1
+        }
+        if (gridPoints[j] == cleanedData$point[cursor]) {
+          value <- cleanedData$value[cursor]
+        } else {
+          x1 <- cleanedData$point[cursor - 1]
+          x2 <- cleanedData$point[cursor]
+          y1 <- cleanedData$value[cursor - 1]
+          y2 <- cleanedData$value[cursor]
+          value <- y1 + ((y2 - y1) * (gridPoints[j] - x1) / (x2 - x1))
+        }
+      }
+      values[j] <- values[j] + value
+    }
+  }
+  names(values) <- gridPoints
+  estimate <- computeEstimateFromGrid(grid = values, alpha = alpha)
+  return(estimate)
 }
 
 combineLogLikelihoodFunctions <- function(x, fits, fun = customFunction) {
@@ -210,9 +236,20 @@ poolPopulations <- function(populations) {
 
 computeEstimateFromGrid <- function(grid, alpha = 0.05) {
   maxIdx <- which(grid == max(grid))[1]
+  if (maxIdx == 1 || maxIdx == length(grid)) {
+    warn("Point estimate out of range")
+    result <- data.frame(rr = NA,
+                         lb = NA,
+                         ub = NA,
+                         logRr = NA,
+                         seLogRr = NA)
+    return(result)
+  }
+
   logRr <- as.numeric(names(grid)[maxIdx])
   threshold <- unlist(grid[maxIdx]) - qchisq(1 - alpha, df = 1)/2
   lbIdx <- min(which(grid[1:maxIdx] > threshold))
+  # TODO: use interpolation to get more precise CI
   if (lbIdx == 1) {
     warn("Lower bound of confidence interval out of range")
   }

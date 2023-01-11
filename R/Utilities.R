@@ -1,4 +1,4 @@
-# Copyright 2022 Observational Health Data Sciences and Informatics
+# Copyright 2023 Observational Health Data Sciences and Informatics
 #
 # This file is part of EvidenceSynthesis
 #
@@ -18,7 +18,7 @@
 
 #' Determine if Java virtual machine supports Java
 #'
-#' @description 
+#' @description
 #' Tests Java virtual machine (JVM) java.version system property to check if version >= 8.
 #'
 #' @return
@@ -47,3 +47,12 @@ supportsJava8 <- function() {
   #                " (>= 8? ", support, ")"))
   return(support)
 }
+
+isRmdCheck <- function() {
+  return(Sys.getenv("_R_CHECK_PACKAGE_NAME_", "") != "")
+}
+
+isUnitTest <- function() {
+  return(tolower(Sys.getenv("TESTTHAT", "")) == "true")
+}
+
