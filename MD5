@@ -1,6 +1,6 @@
-59fa20066f62fac9c8ea126ac6184af5 *DESCRIPTION
+0e250ec4569b637383a02af76557f022 *DESCRIPTION
 b1dfd1848c805bde302f230bcd814b5d *NAMESPACE
-e476f6e037aac5b0368a232b24739f34 *NEWS.md
+98b30346afd2a68856533b0d25114efd *NEWS.md
 65210becd2d061229bf2699505c7b929 *R/BayesianMetaAnalysis.R
 5d353092c531bb4b59cd4562a389dcdb *R/BayesianSynthesis.R
 be81fc8c6d13afdd6749ecbce808fc50 *R/CohortMethod.R
@@ -13,10 +13,13 @@ e6c5ee3ea8c44a45c11f795c4d4c6e44 *R/FixedEffectMetaAnalysis.R
 4cda5f82e003c30df78efbf251c89128 *R/Simulation.R
 db768cc08cf15a6abb97db61389bdb7f *R/Utilities.R
 edb9d60cb85df8336b351dd318f061a8 *README.md
-0ab2dad9a47c4de540aed9a3a2ea4c0b *build/vignette.rds
+58a6643570c9daa9f17dc19135ca6e96 *build/vignette.rds
 460e57268cf5fb4a41460e9d4f125819 *inst/doc/NonNormalEffectSynthesis.R
 2d8714718eef55a7d31c24bf440707af *inst/doc/NonNormalEffectSynthesis.Rmd
-ac925b068dd47f172b820d96606a457a *inst/doc/NonNormalEffectSynthesis.pdf
+3245ce684b80ac6ccc5dfdd0c65ad39b *inst/doc/NonNormalEffectSynthesis.pdf
+3e1f51b9c38e45e3c7f98aab974688b7 *inst/doc/VideoVignette.R
+42e99325d35c6c62378100f7e2e03672 *inst/doc/VideoVignette.Rmd
+75cd11e6d12ce864b8073b1d435edbbf *inst/doc/VideoVignette.pdf
 665a082b16d4f9522118827a3170b028 *inst/java/EvidenceSynthesis.jar
 6da47e4c35046fdb1cac03cca4a21f76 *java/EvidenceSynthesis.jardesc
 27250d104b5cd16504bb4f00d0161e42 *java/org/ohdsi/data/CoxData.java
@@ -65,7 +68,6 @@ c2e68ff25bc8b8bf4856da27f888fe3b *man/simulatePopulations.Rd
 5c354f11781701415f029dad0ee2ee6f *man/skewNormal.Rd
 24c47389c151270ed3451842b4526f12 *man/supportsJava8.Rd
 638752473eb45cfd214d5516057b9217 *tests/testthat.R
-f903f42db5cd7f810f451d2f57f554f5 *tests/testthat/Rplots.pdf
 033902089f1b80082a7597da4dd7d207 *tests/testthat/resources/pooledFixedFxEstimate.rds
 ee1c6fd71169a5757fd73c216c57c8ab *tests/testthat/resources/pooledRandomFxEstimate.rds
 fb28d9c39fd015398ffcf4d5bffee84a *tests/testthat/resources/populations.rds
@@ -76,3 +78,4 @@ cfb16c9587828e1244c53a90f73c751c *tests/testthat/test-nonNormalMetaAnalysis.R
 8d11c3a4b1a15241c4d4c56fdfdc3cd7 *tests/testthat/test-plots.R
 22ad7ee21601d135dfcc6ddf6a342e2e *tests/testthat/test-simpleBayesianModel.R
 2d8714718eef55a7d31c24bf440707af *vignettes/NonNormalEffectSynthesis.Rmd
+42e99325d35c6c62378100f7e2e03672 *vignettes/VideoVignette.Rmd
