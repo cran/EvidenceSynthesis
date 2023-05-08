@@ -3,12 +3,14 @@ set.seed(1)
 
 ## ----eval=TRUE, warning=FALSE, message=FALSE----------------------------------
 library(EvidenceSynthesis)
-simulationSettings <- createSimulationSettings(nSites = 5,
-                                               n = 10000,
-                                               treatedFraction = 0.75,
-                                               nStrata = 5,
-                                               hazardRatio = 2,
-                                               randomEffectSd = 0.5)
+simulationSettings <- createSimulationSettings(
+  nSites = 5,
+  n = 10000,
+  treatedFraction = 0.75,
+  nStrata = 5,
+  hazardRatio = 2,
+  randomEffectSd = 0.5
+)
 populations <- simulatePopulations(simulationSettings)
 
 ## ----eval=TRUE----------------------------------------------------------------
@@ -16,9 +18,10 @@ library(Cyclops)
 # Assume we are at site 1:
 population <- populations[[1]]
 
-cyclopsData <- createCyclopsData(Surv(time, y) ~ x + strata(stratumId), 
-                                 data = population, 
-                                 modelType = "cox")
+cyclopsData <- createCyclopsData(Surv(time, y) ~ x + strata(stratumId),
+  data = population,
+  modelType = "cox"
+)
 cyclopsFit <- fitCyclopsModel(cyclopsData)
 
 ## ----eval=TRUE----------------------------------------------------------------
@@ -29,27 +32,31 @@ exp(coef(cyclopsFit))
 exp(confint(cyclopsFit, parm = "x")[2:3])
 
 ## ----eval=TRUE----------------------------------------------------------------
-approximation <-  approximateLikelihood(
-  cyclopsFit = cyclopsFit, 
-  parameter = "x", 
+approximation <- approximateLikelihood(
+  cyclopsFit = cyclopsFit,
+  parameter = "x",
   approximation = "adaptive grid"
 )
 head(approximation)
 
 ## ----eval=TRUE----------------------------------------------------------------
-plotLikelihoodFit(approximation = approximation,
-                  cyclopsFit = cyclopsFit,
-                  parameter = "x")
+plotLikelihoodFit(
+  approximation = approximation,
+  cyclopsFit = cyclopsFit,
+  parameter = "x"
+)
 
 ## ----eval=TRUE----------------------------------------------------------------
 fitModelInDatabase <- function(population) {
-  cyclopsData <- createCyclopsData(Surv(time, y) ~ x + strata(stratumId), 
-                                   data = population, 
-                                   modelType = "cox")
+  cyclopsData <- createCyclopsData(Surv(time, y) ~ x + strata(stratumId),
+    data = population,
+    modelType = "cox"
+  )
   cyclopsFit <- fitCyclopsModel(cyclopsData)
-  approximation <-  approximateLikelihood(cyclopsFit, 
-                                          parameter = "x",
-                                          approximation = "adaptive grid")
+  approximation <- approximateLikelihood(cyclopsFit,
+    parameter = "x",
+    approximation = "adaptive grid"
+  )
   return(approximation)
 }
 approximations <- lapply(populations, fitModelInDatabase)
@@ -77,9 +84,10 @@ exp(estimate2[1:3])
 labels <- paste("Data site", LETTERS[1:length(populations)])
 
 plotMetaAnalysisForest(
-  data = approximations, 
-  labels = labels, 
+  data = approximations,
+  labels = labels,
   estimate = estimate,
   xLabel = "Hazard Ratio",
-  showLikelihood = TRUE)
+  showLikelihood = TRUE
+)
 

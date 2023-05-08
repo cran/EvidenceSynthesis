@@ -11,8 +11,9 @@ computeBayesianMetaAnalysis(
   subSampleFrequency = 100,
   priorSd = c(2, 0.5),
   alpha = 0.05,
-  seed = 1,
-  robust = FALSE
+  robust = FALSE,
+  df = 4,
+  seed = 1
 )
 }
 \arguments{
@@ -30,9 +31,11 @@ and tau, respectively.}
 
 \item{alpha}{The alpha (expected type I error) used for the credible intervals.}
 
-\item{seed}{The seed for the random number generator.}
+\item{robust}{Whether or not to use a t-distribution model; default: FALSE.}
 
-\item{robust}{Whether or not to use a t-distribution model (default: FALSE)}
+\item{df}{Degrees of freedom for the t-model, only used if robust is TRUE.}
+
+\item{seed}{The seed for the random number generator.}
 }
 \value{
 A data frame with the point estimates and 95\% credible intervals for the mu and tau parameters (the
@@ -51,8 +54,9 @@ populations <- simulatePopulations()
 # Fit a Cox regression at each data site, and approximate likelihood function:
 fitModelInDatabase <- function(population) {
   cyclopsData <- Cyclops::createCyclopsData(Surv(time, y) ~ x + strata(stratumId),
-                                            data = population,
-                                            modelType = "cox")
+    data = population,
+    modelType = "cox"
+  )
   cyclopsFit <- Cyclops::fitCyclopsModel(cyclopsData)
   approximation <- approximateLikelihood(cyclopsFit, parameter = "x", approximation = "custom")
   return(approximation)

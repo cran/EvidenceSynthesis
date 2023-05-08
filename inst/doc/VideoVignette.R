@@ -2,12 +2,14 @@
 library(EvidenceSynthesis)
 
 ## -----------------------------------------------------------------------------
-simulationSettings <- createSimulationSettings(nSites = 10,
-                                               n = 10000,
-                                               treatedFraction = 0.8,
-                                               nStrata = 5,
-                                               hazardRatio = 2,
-                                               randomEffectSd = 0.5)
+simulationSettings <- createSimulationSettings(
+  nSites = 10,
+  n = 10000,
+  treatedFraction = 0.8,
+  nStrata = 5,
+  hazardRatio = 2,
+  randomEffectSd = 0.5
+)
 set.seed(1)
 populations <- simulatePopulations(simulationSettings)
 
@@ -20,8 +22,9 @@ library(Cyclops)
 population <- populations[[1]]
 
 cyclopsData <- createCyclopsData(Surv(time, y) ~ x + strata(stratumId),
-                                 data = population,
-                                 modelType = "cox")
+  data = population,
+  modelType = "cox"
+)
 cyclopsFit <- fitCyclopsModel(cyclopsData)
 
 # Hazard ratio:
@@ -31,20 +34,21 @@ exp(coef(cyclopsFit))
 exp(confint(cyclopsFit, parm = "x")[2:3])
 
 ## -----------------------------------------------------------------------------
-normalApproximation <-  approximateLikelihood(
+normalApproximation <- approximateLikelihood(
   cyclopsFit = cyclopsFit,
   parameter = "x",
   approximation = "normal"
 )
 normalApproximation
 
-plotLikelihoodFit(approximation = normalApproximation,
-                  cyclopsFit = cyclopsFit,
-                  parameter = "x")
+plotLikelihoodFit(
+  approximation = normalApproximation,
+  cyclopsFit = cyclopsFit,
+  parameter = "x"
+)
 
 ## -----------------------------------------------------------------------------
-
-approximation <-  approximateLikelihood(
+approximation <- approximateLikelihood(
   cyclopsFit = cyclopsFit,
   parameter = "x",
   approximation = "adaptive grid",
@@ -52,29 +56,35 @@ approximation <-  approximateLikelihood(
 )
 head(approximation)
 
-plotLikelihoodFit(approximation = approximation,
-                  cyclopsFit = cyclopsFit,
-                  parameter = "x")
+plotLikelihoodFit(
+  approximation = approximation,
+  cyclopsFit = cyclopsFit,
+  parameter = "x"
+)
 
 ## -----------------------------------------------------------------------------
 fitModelInDatabase <- function(population, approximation) {
   cyclopsData <- createCyclopsData(Surv(time, y) ~ x + strata(stratumId),
-                                   data = population,
-                                   modelType = "cox")
+    data = population,
+    modelType = "cox"
+  )
   cyclopsFit <- fitCyclopsModel(cyclopsData)
-  approximation <-  approximateLikelihood(cyclopsFit,
-                                          parameter = "x",
-                                          approximation = approximation)
+  approximation <- approximateLikelihood(cyclopsFit,
+    parameter = "x",
+    approximation = approximation
+  )
   return(approximation)
 }
 adaptiveGridApproximations <- lapply(
-  X = populations, 
-  FUN = fitModelInDatabase, 
-  approximation = "adaptive grid")
+  X = populations,
+  FUN = fitModelInDatabase,
+  approximation = "adaptive grid"
+)
 normalApproximations <- lapply(
-  X = populations, 
-  FUN = fitModelInDatabase, 
-  approximation = "normal")
+  X = populations,
+  FUN = fitModelInDatabase,
+  approximation = "normal"
+)
 normalApproximations <- do.call(rbind, (normalApproximations))
 
 ## ----message = FALSE,cache = TRUE---------------------------------------------

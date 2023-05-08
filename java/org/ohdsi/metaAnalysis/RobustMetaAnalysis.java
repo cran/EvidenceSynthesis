@@ -25,9 +25,8 @@ import org.ohdsi.mcmc.Runner;
 
 public class RobustMetaAnalysis extends MetaAnalysis {
 
-
-	public RobustMetaAnalysis(DataModel dataModel, ScalePrior scalePrior, double muPriorSd) {
-		super(dataModel, scalePrior, muPriorSd);
+	public RobustMetaAnalysis(DataModel dataModel, ScalePrior scalePrior, double muPriorSd, double df) {
+		super(dataModel, scalePrior, new TLocationHyperPrior(muPriorSd, df));
 	}
 
 	protected MCMCOperator getMuOperator(Parameter mu,
@@ -40,9 +39,14 @@ public class RobustMetaAnalysis extends MetaAnalysis {
 		return new RandomWalkOperator(mu, null, 0.75, condition, weight, mode);
 	}
 
-	protected ParametricDistributionModel getMuDistribution(Parameter mu, Parameter tau, boolean isPrecision) {
+	protected ParametricDistributionModel getMuDistribution(Parameter mu, Parameter tau, boolean isPrecision,
+															LocationHyperPrior hyperPrior) {
+		if (!(hyperPrior instanceof TLocationHyperPrior)) {
+			throw new IllegalArgumentException("Must specify t-distribution hyper-parameters");
+		}
+
 		return new TDistributionModel(mu, tau,
-				new Parameter.Default("df", 4.0, 0.0, Double.POSITIVE_INFINITY));
+		new Parameter.Default("df", ((TLocationHyperPrior) hyperPrior).getDf(), 0.0, Double.POSITIVE_INFINITY));
 	}
 
 	public static void main(String[] args) {
@@ -52,7 +56,7 @@ public class RobustMetaAnalysis extends MetaAnalysis {
 		int subSampleFrequency = 1000;
 
 		RobustMetaAnalysis analysis = new RobustMetaAnalysis(new SkewNormalDataModel("c:/temp/skewnormal_example_3.csv"),
-				new HalfNormalOnStdDevPrior(0.0, 2), 1000);
+				new HalfNormalOnStdDevPrior(0.0, 2), 1000, 4);
 
 		Runner runner = new Runner(analysis, chainLength, burnIn, subSampleFrequency, 666);
 
